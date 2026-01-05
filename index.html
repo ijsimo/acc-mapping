@@ -1,18 +1,86 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Hello GitHub Pages</title>
-  </head>
-  <body>
-    <h1>Hello GitHub Pages</h1>
+<head>
+  <meta charset="utf-8">
+  <title>PlayerID JSON Mapper</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
 
-    <button onclick="sayHello()">Click me</button>
+  <h1>PlayerID Mapper</h1>
 
-    <script>
-      function sayHello() {
-        alert("hello");
+  <h3>Entry List JSON</h3>
+  <textarea id="jsonInput" placeholder="Paste entry list JSON here"></textarea>
+
+  <h3>CSV Mapping (fakePSId,xboxId)</h3>
+  <textarea id="csvInput" placeholder="fakePS123,xboxABC"></textarea>
+
+  <button onclick="process()">Convert IDs</button>
+
+  <h3>Output JSON</h3>
+  <textarea id="output" placeholder="Result will appear here"></textarea>
+
+  <script>
+    function parseCSV(csvText) {
+      const map = {};
+      const lines = csvText.split(/\r?\n/);
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const [ps, xbox] = line.split(',').map(s => s.trim());
+        if (ps && xbox) {
+          map[ps] = xbox;
+        }
       }
-    </script>
-  </body>
+      return map;
+    }
+
+    function replacePlayerIDs(obj, idMap) {
+      if (Array.isArray(obj)) {
+        obj.forEach(item => replacePlayerIDs(item, idMap));
+      } else if (obj !== null && typeof obj === "object") {
+        for (const key in obj) {
+          if (key === "playerID" && idMap[obj[key]]) {
+            obj[key] = idMap[obj[key]];
+          } else {
+            replacePlayerIDs(obj[key], idMap);
+          }
+        }
+      }
+    }
+
+    function process() {
+      try {
+        const jsonText = document.getElementById("jsonInput").value;
+        const csvText = document.getElementById("csvInput").value;
+
+        const data = JSON.parse(jsonText);
+        const idMap = parseCSV(csvText);
+
+        replacePlayerIDs(data, idMap);
+
+        document.getElementById("output").value =
+          JSON.stringify(data, null, 2);
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    }
+  </script>
+
+</body>
 </html>
